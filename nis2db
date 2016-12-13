@@ -50,7 +50,7 @@ def main():
 		sys.exit(1)
 
 	if args.verbose:
-		print "using nis domain: " + nisdomaiin
+		print "using nis domain: " + nisdomain
 		print "output dir: " + args.output
 
 	try:
