@@ -1,5 +1,6 @@
 #!/usr/bin/python
 
+import sys
 import nis
 import argparse
 import subprocess
@@ -7,7 +8,7 @@ import subprocess
 MAKEDB = "/usr/bin/makedb"
 DB_DIR = "/var/db/"
 		
-def process_map(service,map_name,id_field=3,verbose=False):
+def process_map(service,map_name,output_dir,id_field=3,verbose=False):
 
 	if verbose:
 		print "processing " + service + " from map " + map_name
@@ -15,8 +16,8 @@ def process_map(service,map_name,id_field=3,verbose=False):
 	try:
 		map_entries = nis.cat(map_name)
 	except nis.error as ex:
-		print "Error retrieving map " + map_name + ": " + str(ex)
-		exit(2)		
+		sys.stderr.write("Error retrieving map " + map_name + ": " + str(ex) + "\n")
+		sys.exit(3)		
 
 	makedb_input = ""
 
@@ -26,42 +27,49 @@ def process_map(service,map_name,id_field=3,verbose=False):
 		makedb_input += "=" + parts[2] + " " + value + "\n"
 
 	try:
-		proc = subprocess.Popen(MAKEDB + " -o " + DB_DIR + "/" + service + ".db -",stdin=subprocess.PIPE,stdout=subprocess.PIPE, stderr=subprocess.STDOUT,shell=True)
+		proc = subprocess.Popen(MAKEDB + " -o " + output_dir + "/" + service + ".db -",stdin=subprocess.PIPE,stdout=subprocess.PIPE, stderr=subprocess.STDOUT,shell=True)
 		(stdoutdata, stderrdata) = proc.communicate(makedb_input)
 
 		if proc.returncode != 0:
 			print "Error executing makedb. Return code: " + str(proc.returncode)
 			print str(stdoutdata)
-			print str(stderrdata)
 	except Exception as ex:
-		print "Error executing makedb: " + str(ex)
-		exit(-1)
+		sys.stderr.write("Error executing makedb: " + str(ex) + "\n")
+		sys.exit(4)
 
 def main():
 	parser = argparse.ArgumentParser("Convert NIS maps into db files compatbile with glibc 2.15 onwards")
 	parser.add_argument("-v", "--verbose", help="output debugging information", action="store_true")
+	parser.add_argument("-o", "--output", help="the directory to create the db files in", action="store", default=DB_DIR)
 	args = parser.parse_args()
 
+	try:
+		nisdomain = nis.get_default_domain()
+	except nis.error as ex:
+		sys.stderr.write("Could not obtain NIS domain: " + str(ex) + "\n")
+		sys.exit(1)
+
 	if args.verbose:
-		print "using nis domain: " + nis.get_default_domain()
+		print "using nis domain: " + nisdomaiin
+		print "output dir: " + args.output
 
 	try:
 		maps = nis.maps()
 	except nis.error as ex:
-		print "Error retrieving list of maps: " + str(ex)
-		exit(1)
+		sys.stderr.write("Error retrieving list of maps: " + str(ex) + "\n")
+		sys.exit(2)
 
 	## passwd
 	if "passwd.byname" in maps:
-		process_map("passwd","passwd.byname",verbose=args.verbose)
+		process_map("passwd","passwd.byname",args.output,verbose=args.verbose)
 	else:
-		print "passwd.byname not found in NIS, skipping passwd.db generation"
+		sys.stderr.write("passwd.byname not found in NIS, skipping passwd.db generation\n")
 
 	## group
 	if "group.byname" in maps:
-		process_map("group","group.byname",verbose=args.verbose)
+		process_map("group","group.byname",args.output,verbose=args.verbose)
 	else:
-		print "group.byname not found in NIS, skipping group.db generation"
+		sys.stderr.write("group.byname not found in NIS, skipping group.db generation\n")
 
 if __name__ == "__main__":
 	main()
