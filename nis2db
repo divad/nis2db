@@ -11,7 +11,7 @@ DB_DIR = "/var/db/"
 def process_map(service,map_name,output_dir,id_field=3,verbose=False):
 
 	if verbose:
-		print "processing " + service + " from map " + map_name
+		print "creating " + output_dir + service + ".db from map " + map_name
 
 	try:
 		map_entries = nis.cat(map_name)
@@ -48,6 +48,9 @@ def main():
 	except nis.error as ex:
 		sys.stderr.write("Could not obtain NIS domain: " + str(ex) + "\n")
 		sys.exit(1)
+
+	if not args.output.endswith("/"):
+		args.output = args.output + "/"
 
 	if args.verbose:
 		print "using nis domain: " + nisdomain
