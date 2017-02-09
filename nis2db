@@ -9,7 +9,7 @@ MAKEDB = "/usr/bin/makedb"
 DB_DIR = "/var/db/"
 		
 def process_map(service,map_name,output_dir,verbose=False,group=False):
-	users = []
+	users = {}
 
 	if verbose:
 		print "creating " + output_dir + service + ".db from map " + map_name
