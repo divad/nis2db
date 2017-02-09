@@ -43,7 +43,7 @@ def process_map(service,map_name,output_dir,verbose=False,group=False):
 					if len(user) > 0:
 						if not user in users:
 							users[user] = []
-							users[user].append(entryid)
+						users[user].append(entryid)
 
 		# if we're processing a group we need to add entries starting with ":"
 		# which list the groups a user is in, this is because nss_db can't 
