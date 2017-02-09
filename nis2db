@@ -8,7 +8,8 @@ import subprocess
 MAKEDB = "/usr/bin/makedb"
 DB_DIR = "/var/db/"
 		
-def process_map(service,map_name,output_dir,id_field=3,verbose=False):
+def process_map(service,map_name,output_dir,verbose=False):
+	users = []
 
 	if verbose:
 		print "creating " + output_dir + service + ".db from map " + map_name
@@ -17,11 +18,40 @@ def process_map(service,map_name,output_dir,id_field=3,verbose=False):
 		map_entries = nis.cat(map_name)
 	except nis.error as ex:
 		sys.stderr.write("Error retrieving map " + map_name + ": " + str(ex) + "\n")
-		sys.exit(3)		
+		sys.exit(3)
 
 	makedb_input = ""
 
 	for key, value in map_entries.iteritems():
+		parts   = value.split(':') # split the entry of the map by the field sep
+		entryid = parts[2] # store the UID or GID of this entry
+
+		## Add the forward/reverse lookup of the map
+		makedb_input += "." + key + " " + value + "\n"
+		makedb_input += "=" + entryid + " " + value + "\n"
+
+		## if we're processing a group entry we need to list the members
+		## of this group, and then update our list of users with the group
+		## each user is in, so we build a mapping of users to groups
+		if group:
+			# if there are users in the group
+			if len(parts) == 4:
+				users_in_group = parts[3]
+				users_in_group = users_in_group.split(',')
+
+				for user in users_in_group:
+					if len(user) > 0:
+						if not user in users:
+							users[user] = []
+							users[user].append(entryid)
+
+		# if we're processing a group we need to add entries starting with ":"
+		# which list the groups a user is in, this is because nss_db can't 
+		# for some reason work this out for itself (?!??!)
+		if group:
+			for userkey,uservalue in users.iteritems():
+				makedb_input += ":" + userkey + " " + userkey + " " + ",".join(uservalue) + "\n"
+
 		makedb_input += "." + key + " " + value + "\n"
 		parts = value.split(':')
 		makedb_input += "=" + parts[2] + " " + value + "\n"
@@ -76,4 +106,3 @@ def main():
 
 if __name__ == "__main__":
 	main()
-
