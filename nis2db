@@ -100,7 +100,7 @@ def main():
 
 	## group
 	if "group.byname" in maps:
-		process_map("group","group.byname",args.output,verbose=args.verbose)
+		process_map("group","group.byname",args.output,verbose=args.verbose,group=True)
 	else:
 		sys.stderr.write("group.byname not found in NIS, skipping group.db generation\n")
 
