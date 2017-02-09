@@ -8,7 +8,7 @@ import subprocess
 MAKEDB = "/usr/bin/makedb"
 DB_DIR = "/var/db/"
 		
-def process_map(service,map_name,output_dir,verbose=False):
+def process_map(service,map_name,output_dir,verbose=False,group=False):
 	users = []
 
 	if verbose:
